@@ -10,13 +10,13 @@ import shutil
 import numpy as np
 import torch
 from theconf import Config as C, ConfigArgumentParser
-from .common import get_logger, add_filehandler
-from .data import get_datasets
-from .text_networks import get_model, num_class, get_num_class
+from common import get_logger, add_filehandler
+from data import get_datasets
+from text_networks import get_model, num_class, get_num_class
 import transformers
 from transformers import BertForSequenceClassification, Trainer, TrainingArguments
-from .utils.metrics import accuracy, f1, accuracy_score
-from .utils.train_tfidf import train_tfidf
+from utils.metrics import accuracy, f1, accuracy_score
+from utils.train_tfidf import train_tfidf
 
 transformers.logging.set_verbosity_info()
 logger = get_logger('Text AutoAugment')
@@ -76,6 +76,7 @@ def train_and_eval(tag, policy_opt, save_path=None, only_eval=False):
         do_train=do_train,
         do_eval=True,
         evaluation_strategy="epoch",
+        save_strategy="epoch",
         num_train_epochs=config['epoch'],  # total number of training epochs
         per_device_train_batch_size=per_device_train_batch_size,  # batch size per device during training
         per_device_eval_batch_size=config['per_device_eval_batch_size'],  # batch size for evaluation

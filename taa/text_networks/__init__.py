@@ -47,10 +47,11 @@ def num_class(dataset):
 
 
 def get_num_class(dataset):
-    path = C.get()['dataset']['path']
-    if path is None:
-        dataset = load_dataset(path=dataset, split='train')
-    else:
-        dataset = load_dataset(path=path, name=dataset, split='train')
-    return dataset.features['label'].num_classes
+    # path = C.get()['dataset']['path']
+    # if path is None:
+    #     dataset = load_dataset(path=dataset, split='train')
+    # else:
+    #    dataset = load_dataset(path=path, name=dataset, split='train')
+    # return dataset.features['label'].num_classes
 
+    return int(C.get()['num_classes'])

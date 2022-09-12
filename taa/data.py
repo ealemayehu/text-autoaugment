@@ -4,26 +4,26 @@ import os
 import random
 import torch
 from torch.utils.data import SubsetRandomSampler, Sampler, Subset, ConcatDataset
-from .transforms import Compose
+from transforms import Compose
 from sklearn.model_selection import StratifiedShuffleSplit, KFold
 from theconf import Config as C
 import numpy as np
-from .custom_dataset import general_dataset
-from datasets import load_dataset
-from .augmentation import get_augment, apply_augment, random_augment
-from .common import get_logger
+from custom_dataset import general_dataset
+from datasets import Features, Value, ClassLabel, load_dataset
+from augmentation import get_augment, apply_augment, random_augment
+from common import get_logger
 import pandas as pd
-from .utils.raw_data_utils import get_processor, general_subsample_by_classes, get_examples, general_split
+from utils.raw_data_utils import get_processor, general_subsample_by_classes, get_examples, general_split
 from transformers import BertTokenizer, BertTokenizerFast
-from .text_networks import num_class
+from text_networks import num_class
 import math
 import copy
-from .archive import policy_map
+from archive import policy_map
 import multiprocessing
 from functools import partial
 import time
-from .utils.get_data import download_data
-from .utils.metrics import n_dist
+from utils.get_data import download_data
+from utils.metrics import n_dist
 
 
 logger = get_logger('Text AutoAugment')
@@ -38,6 +38,7 @@ def get_datasets(dataset, policy_opt):
     data_dir = C.get()['dataset']['data_dir']
     data_files = C.get()['dataset']['data_files']
     text_key = C.get()['dataset']['text_key']
+    num_classes = C.get()['num_classes']
 
     logger.info('aug: {}'.format(aug))
     if isinstance(aug, list) or aug in ['taa', 'random_taa']:  # using sampled policies
@@ -56,6 +57,19 @@ def get_datasets(dataset, policy_opt):
     else:
         train_dataset = load_dataset(path=path, name=dataset, data_dir=data_dir, data_files=data_files, split='train')
         test_dataset = load_dataset(path=path, name=dataset, data_dir=data_dir, data_files=data_files, split='test')
+
+    
+    features = Features({
+        'text': Value(dtype='string'),
+        'label': ClassLabel(names=[str(item) for item in range(0, 2)])
+    })
+
+    train_dataset = train_dataset.cast(features)
+    test_dataset = test_dataset.cast(features)
+    
+    # print("******* BEGIN TRAIN DATA SET ********")
+    # print(train_dataset)
+    # print("****** EBD TRAIN DATA SET **********")
 
     label_names = train_dataset.features['label'].names
     class_num = train_dataset.features['label'].num_classes
@@ -103,6 +117,9 @@ class Augmentation(object):
         # generate multiple augmented data if necessary
         labels = labels.repeat(C.get()['n_aug'])
         texts = texts.repeat(C.get()['n_aug'])
+        print("Begin")
+        print(texts)
+        print("End")
         partial_apply_augment = partial(apply_augment, policy=self.policy, config=copy.deepcopy(C.get().conf))
         with multiprocessing.Pool(processes=8) as pool:
             aug_texts = pool.map(partial_apply_augment, texts)
